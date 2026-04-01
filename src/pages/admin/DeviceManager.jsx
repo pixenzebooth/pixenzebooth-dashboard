@@ -4,11 +4,18 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAlert } from '../../context/AlertContext';
 import { Monitor, Plus, Trash2, X, Wifi, WifiOff, Wrench, Search, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import { Badge } from '../../components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
+import { Skeleton } from '../../components/ui/skeleton';
+import { cn } from '../../lib/cn';
 
 const statusConfig = {
-    active: { label: 'Online', icon: Wifi, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    inactive: { label: 'Offline', icon: WifiOff, color: 'text-slate-500', bg: 'bg-slate-100' },
-    maintenance: { label: 'Maintenance', icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-50' },
+    active: { label: 'Online', icon: Wifi, variant: 'success' },
+    inactive: { label: 'Offline', icon: WifiOff, variant: 'secondary' },
+    maintenance: { label: 'Maintenance', icon: Wrench, variant: 'warning' },
 };
 
 const DeviceManager = () => {
@@ -25,14 +32,12 @@ const DeviceManager = () => {
         if (!tenantId) return;
         setLoading(true);
 
-        // Fetch Devices
         const deviceQuery = supabase
             .from('devices')
             .select('*')
             .eq('tenant_id', tenantId)
             .order('created_at', { ascending: false });
 
-        // Fetch Subscription for limit
         const subQuery = supabase
             .from('subscriptions')
             .select('device_limit')
@@ -66,7 +71,7 @@ const DeviceManager = () => {
             status: 'inactive',
         }]);
         if (error) { showAlert('Failed: ' + error.message, "error"); return; }
-        
+
         showAlert("Device registered successfully!", "success");
         setShowForm(false);
         setFormData({ device_name: '', hardware_id: '' });
@@ -96,48 +101,50 @@ const DeviceManager = () => {
         <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Device Manager</h1>
-                    <p className="text-slate-500 text-sm mt-1">{activeCount} online, {devices.length} total</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Device Manager</h1>
+                    <p className="text-muted-foreground text-sm mt-1">{activeCount} online, {devices.length} total</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={fetchData} className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition" title="Refresh">
-                        <RefreshCw size={18} className="text-slate-500" />
-                    </button>
-                    <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition shadow-sm">
-                        <Plus size={18} /> Register Device
-                    </button>
+                    <Button variant="outline" size="icon" onClick={fetchData} title="Refresh">
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={() => setShowForm(true)}>
+                        <Plus className="h-4 w-4" />
+                        Register Device
+                    </Button>
                 </div>
             </div>
 
             {/* Search */}
             <div className="relative mb-6">
-                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="Search devices..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-sm" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="text"
+                    placeholder="Search devices..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                />
             </div>
 
             {/* Devices List */}
             {loading ? (
                 <div className="space-y-3">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-xl bg-slate-100 animate-pulse shrink-0"></div>
+                        <Card key={i} className="p-4 flex items-center gap-4">
+                            <Skeleton className="h-12 w-12 rounded-xl" />
                             <div className="flex-1 space-y-2">
-                                <div className="h-4 bg-slate-200 animate-pulse rounded w-1/3"></div>
-                                <div className="h-3 bg-slate-100 animate-pulse rounded w-1/4"></div>
+                                <Skeleton className="h-4 w-1/3" />
+                                <Skeleton className="h-3 w-1/4" />
                             </div>
-                            <div className="flex gap-2">
-                                <div className="h-8 w-8 bg-slate-100 animate-pulse rounded-lg"></div>
-                                <div className="h-8 w-8 bg-slate-100 animate-pulse rounded-lg"></div>
-                            </div>
-                        </div>
+                        </Card>
                     ))}
                 </div>
             ) : filteredDevices.length === 0 ? (
                 <div className="text-center py-20">
-                    <Monitor className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 text-lg">No devices registered</p>
-                    <p className="text-slate-400 text-sm mt-1">Register your first photobooth device</p>
+                    <Monitor className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                    <p className="text-foreground text-lg font-medium">No devices registered</p>
+                    <p className="text-muted-foreground text-sm mt-1">Register your first photobooth device</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -149,74 +156,88 @@ const DeviceManager = () => {
                                 key={device.id}
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-sm transition"
                             >
-                                <div className={`p-3 rounded-xl ${status.bg}`}>
-                                    <Monitor size={22} className={status.color} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-slate-900 truncate">{device.device_name}</h3>
-                                    <div className="flex items-center gap-3 mt-0.5">
-                                        <span className={`text-xs font-medium flex items-center gap-1 ${status.color}`}>
-                                            <StatusIcon size={12} /> {status.label}
-                                        </span>
-                                        {device.hardware_id && (
-                                            <span className="text-xs text-slate-400 font-mono">{device.hardware_id.slice(0, 12)}...</span>
-                                        )}
-                                        {device.last_seen_at && (
-                                            <span className="text-xs text-slate-400">
-                                                Last seen: {new Date(device.last_seen_at).toLocaleString('id-ID')}
-                                            </span>
-                                        )}
+                                <Card className="p-4 flex items-center gap-4 hover:shadow-sm transition">
+                                    <div className={cn(
+                                        "p-3 rounded-xl",
+                                        device.status === 'active' && 'bg-emerald-500/10',
+                                        device.status === 'inactive' && 'bg-muted',
+                                        device.status === 'maintenance' && 'bg-amber-500/10',
+                                    )}>
+                                        <Monitor className={cn(
+                                            "h-5 w-5",
+                                            device.status === 'active' && 'text-emerald-600',
+                                            device.status === 'inactive' && 'text-muted-foreground',
+                                            device.status === 'maintenance' && 'text-amber-600',
+                                        )} />
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <button onClick={() => toggleStatus(device)} className="p-2 hover:bg-slate-100 rounded-lg transition text-slate-400" title="Toggle status">
-                                        {device.status === 'active' ? <WifiOff size={16} /> : <Wifi size={16} />}
-                                    </button>
-                                    <button onClick={() => handleDelete(device.id)} className="p-2 hover:bg-red-50 rounded-lg transition text-red-400 hover:text-red-600" title="Remove">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-semibold truncate">{device.device_name}</h3>
+                                        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                                            <Badge variant={status.variant} className="gap-1">
+                                                <StatusIcon className="h-3 w-3" /> {status.label}
+                                            </Badge>
+                                            {device.hardware_id && (
+                                                <span className="text-xs text-muted-foreground font-mono">{device.hardware_id.slice(0, 12)}...</span>
+                                            )}
+                                            {device.last_seen_at && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Last seen: {new Date(device.last_seen_at).toLocaleString('id-ID')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleStatus(device)} title="Toggle status">
+                                            {device.status === 'active' ? <WifiOff className="h-4 w-4" /> : <Wifi className="h-4 w-4" />}
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(device.id)} title="Remove">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </Card>
                             </motion.div>
                         );
                     })}
                 </div>
             )}
 
-            {/* Register Device Modal */}
-            <AnimatePresence>
-                {showForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl relative"
-                        >
-                            <button onClick={() => setShowForm(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                                <X size={20} />
-                            </button>
-                            <h2 className="text-xl font-bold text-slate-900 mb-6">Register Device</h2>
-                            <form onSubmit={handleCreate} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Device Name</label>
-                                    <input type="text" required value={formData.device_name} onChange={(e) => setFormData({ ...formData, device_name: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-sm" placeholder="e.g. Booth-Studio-1" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Hardware ID (Optional)</label>
-                                    <input type="text" value={formData.hardware_id} onChange={(e) => setFormData({ ...formData, hardware_id: e.target.value })}
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 text-sm font-mono" placeholder="Auto-filled when device connects" />
-                                </div>
-                                <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition">
-                                    Register Device
-                                </button>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            {/* Register Device Dialog */}
+            <Dialog open={showForm} onOpenChange={setShowForm}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Register Device</DialogTitle>
+                        <DialogDescription>
+                            Add a new photobooth device to your account.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreate} className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Device Name</label>
+                            <Input
+                                type="text"
+                                required
+                                value={formData.device_name}
+                                onChange={(e) => setFormData({ ...formData, device_name: e.target.value })}
+                                placeholder="e.g. Booth-Studio-1"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Hardware ID (Optional)</label>
+                            <Input
+                                type="text"
+                                value={formData.hardware_id}
+                                onChange={(e) => setFormData({ ...formData, hardware_id: e.target.value })}
+                                placeholder="Auto-filled when device connects"
+                                className="font-mono"
+                            />
+                        </div>
+                        <Button type="submit" className="w-full">
+                            Register Device
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

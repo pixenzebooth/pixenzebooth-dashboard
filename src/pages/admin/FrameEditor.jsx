@@ -250,7 +250,7 @@ const FrameEditor = () => {
             }
 
             showAlert("Frame Saved Successfully!", "success");
-            navigate('/admin/frames');
+            navigate('/');
         } catch (error) {
             console.error(error);
             showAlert("Error saving frame: " + error.message, "error");
@@ -286,10 +286,10 @@ const FrameEditor = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-5rem)] font-nunito bg-slate-50 text-slate-800 flex flex-col relative w-full max-w-6xl mx-auto">
+        <div className="min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-5rem)] bg-background text-foreground flex flex-col relative w-full max-w-6xl mx-auto">
 
             <div className="shrink-0 w-full flex items-center justify-between mb-4 z-10 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <button onClick={() => navigate('/admin/frames')} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 hover:-translate-x-1 font-semibold transition-all shadow-sm">
+                <button onClick={() => navigate('/')} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 hover:-translate-x-1 font-semibold transition-all shadow-sm">
                     <ArrowLeft size={18} /> Back
                 </button>
                 <div className="flex items-center gap-3">
@@ -352,7 +352,7 @@ const FrameEditor = () => {
                                             className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-medium appearance-none"
                                         >
                                             <option value="active">Active</option>
-                                            <option value="coming_soon">Coming Soon</option>
+                                            <option value="deactive">Deactive</option>
                                         </select>
                                     </div>
 

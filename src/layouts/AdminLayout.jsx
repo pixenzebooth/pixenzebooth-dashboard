@@ -7,16 +7,20 @@ import {
     PlusSquare,
     LogOut,
     Menu,
-    X,
     Sparkles,
     Palette,
     Calendar,
     Monitor,
     CreditCard,
     Key,
-    Shield
+    Shield,
+    ChevronRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '../components/ui/button';
+import { Separator } from '../components/ui/separator';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
+import { ThemeToggle } from '../components/theme-toggle';
+import { cn } from '../lib/cn';
 
 const AdminLayout = () => {
     const { user, tenantRole } = useAuth();
@@ -57,156 +61,124 @@ const AdminLayout = () => {
         }
     ];
 
-    if (tenantRole === 'superadmin') {
-        navGroups.push({
-            title: 'Super Admin',
-            items: [
-                { path: '/superadmin', label: 'Superadmin Dashboard', icon: Shield }
-            ]
-        });
-    }
-
     const isActive = (path) => {
         if (path === '/' && location.pathname !== '/') return false;
         return location.pathname.startsWith(path);
     };
 
-    return (
-        <div className="min-h-screen bg-slate-50 text-slate-800 flex font-nunito selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
-
-            {/* Sidebar (Desktop) */}
-            <aside className="hidden md:flex flex-col w-64 bg-white/70 backdrop-blur-xl border-r border-slate-200/60 z-20 relative shadow-sm">
-                <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-200/60">
-                    <div className="bg-blue-50 p-2 rounded-lg text-blue-600">
-                        <Sparkles size={20} fill="currentColor" />
+    const NavContent = ({ onNavigate }) => (
+        <>
+            <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+                {navGroups.map((group, index) => (
+                    <div key={index} className="space-y-1">
+                        <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            {group.title}
+                        </h3>
+                        {group.items.map((item) => {
+                            const active = isActive(item.path);
+                            return (
+                                <Button
+                                    key={item.path}
+                                    variant={active ? 'secondary' : 'ghost'}
+                                    className={cn(
+                                        'w-full justify-start gap-3 font-medium',
+                                        active && 'bg-primary/10 text-primary hover:bg-primary/15 dark:bg-primary/20'
+                                    )}
+                                    onClick={() => {
+                                        navigate(item.path);
+                                        onNavigate?.();
+                                    }}
+                                >
+                                    <item.icon className={cn('h-4 w-4', active ? 'text-primary' : 'text-muted-foreground')} />
+                                    {item.label}
+                                    {active && <ChevronRight className="ml-auto h-4 w-4 text-primary" />}
+                                </Button>
+                            );
+                        })}
                     </div>
-                    <span className="font-extrabold text-xl text-slate-900 tracking-tight">Pixenze</span>
+                ))}
+            </nav>
+
+            <div className="p-4 border-t">
+                <div className="mb-3 px-2">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Signed in as</p>
+                    <p className="text-sm font-medium truncate" title={user?.email}>
+                        {user?.email}
+                    </p>
                 </div>
-
-                <nav className="flex-1 p-4 space-y-6 overflow-y-auto scrollbar-thin">
-                    {navGroups.map((group, index) => (
-                        <div key={index} className="space-y-1">
-                            <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 mb-2">
-                                {group.title}
-                            </h3>
-                            {group.items.map((item) => {
-                                const active = isActive(item.path);
-                                return (
-                                    <button
-                                        key={item.path}
-                                        onClick={() => navigate(item.path)}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all duration-200 ease-in ${active
-                                            ? 'bg-blue-50/80 text-blue-700 border border-blue-100/50 shadow-sm'
-                                            : 'bg-transparent text-slate-600 hover:bg-slate-100/50 hover:text-slate-900'
-                                            }`}
-                                    >
-                                        <item.icon size={20} className={`transition-colors duration-200 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
-                                        {item.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </nav>
-
-                <div className="p-4 border-t border-slate-200/60">
-                    <div className="mb-3 px-2">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Signed in as</p>
-                        <p className="text-sm font-medium text-slate-700 truncate" title={user?.email}>
-                            {user?.email}
-                        </p>
-                    </div>
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-semibold bg-white/50 text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-colors"
+                {tenantRole === 'superadmin' && (
+                    <Button
+                        variant="default"
+                        className="w-full mb-2 gap-2"
+                        onClick={() => {
+                            navigate('/matrix/dashboard');
+                            onNavigate?.();
+                        }}
                     >
-                        <LogOut size={18} /> Logout
-                    </button>
+                        <Shield className="h-4 w-4" />
+                        Matrix Console
+                    </Button>
+                )}
+                <Button
+                    variant="ghost"
+                    className="w-full gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleLogout}
+                >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                </Button>
+            </div>
+        </>
+    );
+
+    return (
+        <div className="min-h-screen bg-background text-foreground flex font-sans overflow-hidden">
+            {/* Sidebar (Desktop) */}
+            <aside className="hidden md:flex flex-col w-64 bg-card border-r z-20 relative">
+                <div className="h-14 flex items-center gap-3 px-6 border-b">
+                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                        <Sparkles size={18} />
+                    </div>
+                    <span className="font-bold text-lg tracking-tight">Pixenze</span>
                 </div>
+
+                <NavContent />
             </aside>
 
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-slate-200/60 z-50 h-16 px-4 flex justify-between items-center shadow-sm">
+            <div className="md:hidden fixed top-0 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b z-50 h-14 px-4 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <div className="bg-blue-50 p-1.5 rounded-md text-blue-600">
-                        <Sparkles size={18} fill="currentColor" />
+                    <div className="bg-primary/10 p-1.5 rounded-md text-primary">
+                        <Sparkles size={16} />
                     </div>
-                    <span className="font-extrabold text-lg text-slate-900 tracking-tight">Pixenze</span>
+                    <span className="font-bold text-lg tracking-tight">Pixenze</span>
                 </div>
-                <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                    <Menu size={24} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Menu className="h-5 w-5" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="p-0 w-72 flex flex-col">
+                            <SheetHeader className="p-4 border-b">
+                                <SheetTitle className="flex items-center gap-2">
+                                    <Sparkles size={18} className="text-primary" />
+                                    Pixenze
+                                </SheetTitle>
+                            </SheetHeader>
+                            <NavContent onNavigate={() => setIsMobileMenuOpen(false)} />
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
 
-            {/* Mobile Menu Overlay */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, x: '-100%' }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: '-100%' }}
-                            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-                            className="fixed inset-y-0 left-0 w-3/4 max-w-sm bg-white/90 backdrop-blur-xl z-[70] flex flex-col shadow-2xl md:hidden"
-                        >
-                            <div className="h-16 flex justify-between items-center px-6 border-b border-slate-200/60">
-                                <span className="font-extrabold text-xl text-slate-900">Menu</span>
-                                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <nav className="flex-1 p-4 space-y-6 overflow-y-auto w-full">
-                                {navGroups.map((group, index) => (
-                                    <div key={index} className="space-y-1">
-                                        <h3 className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 mb-2">
-                                            {group.title}
-                                        </h3>
-                                        {group.items.map((item) => {
-                                            const active = isActive(item.path);
-                                            return (
-                                                <button
-                                                    key={item.path}
-                                                    onClick={() => { navigate(item.path); setIsMobileMenuOpen(false); }}
-                                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-semibold text-[15px] transition-all duration-200 ease-in ${active
-                                                        ? 'bg-blue-50/80 text-blue-700 border border-blue-100/50 shadow-sm'
-                                                        : 'bg-transparent text-slate-600 hover:bg-slate-100/50'
-                                                        }`}
-                                                >
-                                                    <item.icon size={22} className={`transition-colors duration-200 ${active ? 'text-blue-600' : 'text-slate-400'}`} />
-                                                    {item.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </nav>
-
-                            <div className="p-6 border-t border-slate-200/60 bg-slate-50/50 backdrop-blur-sm">
-                                <p className="text-xs font-medium text-slate-500 mb-4 truncate text-center">
-                                    {user?.email}
-                                </p>
-                                <button
-                                    onClick={handleLogout}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold bg-white/50 text-rose-600 border border-slate-200/60 hover:bg-rose-50 hover:border-rose-200 transition-colors shadow-sm"
-                                >
-                                    <LogOut size={20} /> Logout
-                                </button>
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-
             {/* Main Content Area */}
-            <main className="flex-1 relative z-10 overflow-y-auto h-screen md:pt-0 pt-16">
+            <main className="flex-1 relative z-10 overflow-y-auto h-screen md:pt-0 pt-14">
+                <div className="hidden md:flex items-center justify-end px-6 h-14 border-b">
+                    <ThemeToggle />
+                </div>
                 <div className="p-4 md:p-8 lg:p-10 max-w-7xl mx-auto min-h-full">
                     <Outlet />
                 </div>
@@ -216,4 +188,3 @@ const AdminLayout = () => {
 };
 
 export default AdminLayout;
-

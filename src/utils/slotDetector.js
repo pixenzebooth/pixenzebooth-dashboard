@@ -4,9 +4,10 @@
  * Uses connected-component labeling (BFS flood-fill) on the alpha channel.
  */
 
-const SAMPLE_SIZE = 300;
-const ALPHA_THRESHOLD = 30;
-const MIN_REGION_PERCENT = 1.5;
+const SAMPLE_SIZE = 1000;
+const ALPHA_THRESHOLD = 120; // 47% alpha - inclusive of semi-transparent edges
+const MIN_REGION_PERCENT = 1.0;
+const BLEED_PERCENT = 0.4; // % padding to ensure maximal coverage
 
 /**
  * Load an image (URL or data URL) into an HTMLImageElement
@@ -104,13 +105,21 @@ export async function detectSlots(imageSrc) {
             const areaPct = (r.pixelCount / totalArea) * 100;
             return areaPct >= MIN_REGION_PERCENT;
         })
-        .map((r, idx) => ({
-            id: Date.now() + idx,
-            x: Math.round((r.minX / w) * 100),
-            y: Math.round((r.minY / h) * 100),
-            width: Math.round(((r.maxX - r.minX + 1) / w) * 100),
-            height: Math.round(((r.maxY - r.minY + 1) / h) * 100),
-        }))
+        .map((r, idx) => {
+            const rawX = (r.minX / w) * 100;
+            const rawY = (r.minY / h) * 100;
+            const rawW = ((r.maxX - r.minX + 1) / w) * 100;
+            const rawH = ((r.maxY - r.minY + 1) / h) * 100;
+
+            return {
+                id: Date.now() + idx,
+                // Expansive rounding with bleed: floor for position, ceil for size
+                x: Math.max(0, Math.floor(rawX - BLEED_PERCENT / 2)),
+                y: Math.max(0, Math.floor(rawY - BLEED_PERCENT / 2)),
+                width: Math.min(100, Math.ceil(rawW + BLEED_PERCENT)),
+                height: Math.min(100, Math.ceil(rawH + BLEED_PERCENT)),
+            };
+        })
         .sort((a, b) => {
             // Sort: top-to-bottom, then left-to-right
             if (Math.abs(a.y - b.y) < 5) return a.x - b.x;

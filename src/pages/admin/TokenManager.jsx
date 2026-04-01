@@ -3,6 +3,11 @@ import { supabase } from '../../lib/supabase';
 import { useAlert } from '../../context/AlertContext';
 import { Fingerprint, Plus, Trash2, Key, Copy, Check } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { Button } from '../../components/ui/button';
+import { Card } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
+import { Skeleton } from '../../components/ui/skeleton';
 
 export default function TokenManager() {
     const [tokens, setTokens] = useState([]);
@@ -40,8 +45,6 @@ export default function TokenManager() {
         for (let i = 0; i < 8; i++) {
             newToken += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-
-        // Add hyphen for readability
         newToken = `${newToken.slice(0, 4)}-${newToken.slice(4)}`;
 
         try {
@@ -89,92 +92,96 @@ export default function TokenManager() {
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <Fingerprint className="w-6 h-6 text-blue-600" />
+                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <Fingerprint className="w-6 h-6 text-primary" />
                         License Tokens
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">Manage access tokens for your Booth App.</p>
+                    <p className="text-muted-foreground text-sm mt-1">Manage access tokens for your Booth App.</p>
                 </div>
-                <button
-                    onClick={generateToken}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2"
-                >
-                    <Plus className="w-4 h-4" />
+                <Button onClick={generateToken}>
+                    <Plus className="h-4 w-4" />
                     Generate New Token
-                </button>
+                </Button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <Card>
                 {loading ? (
-                    <div className="p-8 text-center text-gray-500 animate-pulse">Loading tokens...</div>
+                    <div className="p-8 space-y-3">
+                        {[1, 2].map(i => (
+                            <div key={i} className="flex items-center gap-4">
+                                <Skeleton className="h-8 w-32" />
+                                <Skeleton className="h-6 w-16 rounded-full" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                        ))}
+                    </div>
                 ) : tokens.length === 0 ? (
                     <div className="p-12 text-center flex flex-col items-center">
-                        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4">
                             <Key className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No tokens yet</h3>
-                        <p className="text-gray-500 max-w-sm mb-6">
+                        <h3 className="text-lg font-semibold mb-2">No tokens yet</h3>
+                        <p className="text-muted-foreground max-w-sm mb-6">
                             Generate a token to allow your devices to access your Booth App instance.
                         </p>
-                        <button
-                            onClick={generateToken}
-                            className="bg-blue-50 text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-100 transition"
-                        >
+                        <Button variant="outline" onClick={generateToken}>
                             Generate First Token
-                        </button>
+                        </Button>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100">
-                                    <th className="py-3 px-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Token</th>
-                                    <th className="py-3 px-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="py-3 px-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Created</th>
-                                    <th className="py-3 px-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 text-sm">
-                                {tokens.map((token) => (
-                                    <tr key={token.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="py-3 px-4">
-                                            <div className="flex items-center gap-3">
-                                                <code className="bg-gray-100 text-gray-800 px-2 py-1 rounded font-mono font-bold tracking-wider text-base">
-                                                    {token.token}
-                                                </code>
-                                                <button
-                                                    onClick={() => copyToClipboard(token.token)}
-                                                    className="text-gray-400 hover:text-blue-600 transition"
-                                                    title="Copy to clipboard"
-                                                >
-                                                    {copiedToken === token.token ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                                                </button>
-                                            </div>
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${token.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                {token.status}
-                                            </span>
-                                        </td>
-                                        <td className="py-3 px-4 text-gray-500 whitespace-nowrap">
-                                            {new Date(token.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="py-3 px-4 text-right">
-                                            <button
-                                                onClick={() => deleteToken(token.id)}
-                                                className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition"
-                                                title="Delete Token"
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Token</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Created</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {tokens.map((token) => (
+                                <TableRow key={token.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <code className="bg-muted px-2 py-1 rounded font-mono font-semibold tracking-wider">
+                                                {token.token}
+                                            </code>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                onClick={() => copyToClipboard(token.token)}
+                                                title="Copy to clipboard"
                                             >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                                {copiedToken === token.token ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={token.status === 'active' ? 'success' : 'destructive'}>
+                                            {token.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground">
+                                        {new Date(token.created_at).toLocaleDateString()}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-destructive hover:text-destructive"
+                                            onClick={() => deleteToken(token.id)}
+                                            title="Delete Token"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
-            </div>
+            </Card>
         </div>
     );
 }
